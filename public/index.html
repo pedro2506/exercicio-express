@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Produtos</title>
+</head>
+<body>
+
+  <h1>Cadastro de Produtos</h1>
+
+  <input id="nome" placeholder="Nome">
+  <input id="preco" placeholder="Preço">
+  <button onclick="adicionar()">Adicionar</button>
+
+  <ul id="lista"></ul>
+
+  <script>
+    async function listar() {
+      const res = await fetch("http://localhost:3001/produtos");
+      const produtos = await res.json();
+
+      const lista = document.getElementById("lista");
+      lista.innerHTML = "";
+
+      produtos.forEach(p => {
+        const li = document.createElement("li");
+        li.innerText = p.nome + " - R$ " + p.preco;
+        lista.appendChild(li);
+      });
+    }
+
+    async function adicionar() {
+      const nome = document.getElementById("nome").value;
+      const preco = Number(document.getElementById("preco").value);
+
+      await fetch("http://localhost:3001/produtos", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ nome, preco })
+      });
+
+      listar();
+    }
+
+    listar();
+  </script>
+
+</body>
+</html>
