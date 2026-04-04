@@ -11,7 +11,8 @@
         <div class="card shadow p-4 mb-4">
             <h2 class="text-center mb-4">Cadastro de Produtos</h2>
             <form id="form-produto" class="row g-3">
-                <input type="hidden" id="produto-id"> <div class="col-md-6">
+                <input type="hidden" id="produto-id">
+                <div class="col-md-6">
                     <input type="text" id="nome" class="form-control" placeholder="Nome do produto" required>
                 </div>
                 <div class="col-md-4">
@@ -33,12 +34,77 @@
                         <th class="text-center">Ações</th>
                     </tr>
                 </thead>
-                <tbody id="tabela-produtos">
-                    </tbody>
+                <tbody id="tabela-produtos"></tbody>
             </table>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const form = document.getElementById('form-produto');
+        const tabela = document.getElementById('tabela-produtos');
+        const inputId = document.getElementById('produto-id');
+        const inputNome = document.getElementById('nome');
+        const inputPreco = document.getElementById('preco');
+        const btnSalvar = document.getElementById('btn-salvar');
+
+        // Carregar produtos
+        async function carregarProdutos() {
+            const res = await fetch('/produtos');
+            const produtos = await res.json();
+            tabela.innerHTML = '';
+            produtos.forEach(p => {
+                tabela.innerHTML += `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.nome}</td>
+                        <td>R$ ${Number(p.preco).toFixed(2)}</td>
+                        <td class="text-center">
+                            <button class="btn btn-warning btn-sm me-2" onclick="prepararEdicao(${p.id}, '${p.nome}', ${p.preco})">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="deletarProduto(${p.id})">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Salvar (Adicionar ou Editar)
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = inputId.value;
+            const dados = { nome: inputNome.value, preco: Number(inputPreco.value) };
+
+            const url = id ? `/produtos/${id}` : '/produtos';
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+
+            form.reset();
+            inputId.value = '';
+            btnSalvar.textContent = 'Adicionar';
+            carregarProdutos();
+        });
+
+        // Deletar
+        async function deletarProduto(id) {
+            if (confirm("Excluir produto?")) {
+                await fetch(`/produtos/${id}`, { method: 'DELETE' });
+                carregarProdutos();
+            }
+        }
+
+        // Preparar edição
+        function prepararEdicao(id, nome, preco) {
+            inputId.value = id;
+            inputNome.value = nome;
+            inputPreco.value = preco;
+            btnSalvar.textContent = 'Atualizar';
+        }
+
+        carregarProdutos();
+    </script>
 </body>
 </html>
