@@ -15,7 +15,7 @@
 
   <script>
     async function listar() {
-      const res = await fetch("http://localhost:3001/produtos");
+      const res = await fetch("/produtos");
       const produtos = await res.json();
 
       const lista = document.getElementById("lista");
