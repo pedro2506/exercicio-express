@@ -3,30 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Loja</title>
+    <title>Gerenciador de Loja Pro</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border: none; border-radius: 12px; }
+        .shadow-sm { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important; }
+    </style>
 </head>
-<body class="bg-light">
+<body>
     <div class="container mt-5">
-        <div class="card shadow p-4 mb-4">
-            <h2 class="text-center mb-4">Cadastro de Produtos</h2>
+        <div class="card shadow-sm p-4 mb-4">
+            <h2 class="text-center mb-4 text-primary">🛒 Cadastro de Produtos</h2>
             <form id="form-produto" class="row g-3">
                 <input type="hidden" id="produto-id">
                 <div class="col-md-6">
-                    <input type="text" id="nome" class="form-control" placeholder="Nome do produto" required>
+                    <label class="form-label fw-bold">Nome do Produto</label>
+                    <input type="text" id="nome" class="form-control" placeholder="Ex: Teclado Mecânico" required>
                 </div>
                 <div class="col-md-4">
-                    <input type="number" id="preco" step="0.01" class="form-control" placeholder="Preço (ex: 20.50)" required>
+                    <label class="form-label fw-bold">Preço</label>
+                    <div class="input-group">
+                        <span class="input-group-text">R$</span>
+                        <input type="number" id="preco" step="0.01" class="form-control" placeholder="0,00" required>
+                    </div>
                 </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100" id="btn-salvar">Adicionar</button>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100 fw-bold" id="btn-salvar">Salvar</button>
                 </div>
             </form>
         </div>
 
-        <div class="card shadow p-4">
-            <table class="table table-hover">
-                <thead class="table-dark">
+        <div class="card shadow-sm p-4">
+            <div class="mb-3">
+                <input type="text" id="input-busca" class="form-control" placeholder="🔍 Pesquisar produtos pelo nome...">
+            </div>
+
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
                     <tr>
                         <th>ID</th>
                         <th>Nome</th>
@@ -46,28 +61,48 @@
         const inputNome = document.getElementById('nome');
         const inputPreco = document.getElementById('preco');
         const btnSalvar = document.getElementById('btn-salvar');
+        const inputBusca = document.getElementById('input-busca');
 
-        // Carregar produtos
+        let todosProdutos = []; // Guardaremos os produtos aqui para filtrar sem ir ao banco toda hora
+
+        // FORMATAÇÃO DE MOEDA (BRL)
+        const formatarMoeda = (valor) => {
+            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
+        };
+
+        // CARREGAR PRODUTOS
         async function carregarProdutos() {
             const res = await fetch('/produtos');
-            const produtos = await res.json();
+            todosProdutos = await res.json();
+            renderizarTabela(todosProdutos);
+        }
+
+        // RENDERIZAR TABELA COM FILTRO
+        function renderizarTabela(lista) {
             tabela.innerHTML = '';
-            produtos.forEach(p => {
+            lista.forEach(p => {
                 tabela.innerHTML += `
                     <tr>
-                        <td>${p.id}</td>
-                        <td>${p.nome}</td>
-                        <td>R$ ${Number(p.preco).toFixed(2)}</td>
+                        <td><span class="badge bg-secondary">#${p.id}</span></td>
+                        <td class="fw-bold">${p.nome}</td>
+                        <td class="text-success fw-bold">${formatarMoeda(p.preco)}</td>
                         <td class="text-center">
-                            <button class="btn btn-warning btn-sm me-2" onclick="prepararEdicao(${p.id}, '${p.nome}', ${p.preco})">Editar</button>
-                            <button class="btn btn-danger btn-sm" onclick="deletarProduto(${p.id})">Excluir</button>
+                            <button class="btn btn-outline-warning btn-sm me-2" onclick="prepararEdicao(${p.id}, '${p.nome}', ${p.preco})">✏️ Editar</button>
+                            <button class="btn btn-outline-danger btn-sm" onclick="confirmarExclusao(${p.id})">🗑️ Excluir</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // Salvar (Adicionar ou Editar)
+        // BUSCA EM TEMPO REAL
+        inputBusca.addEventListener('input', (e) => {
+            const termo = e.target.value.toLowerCase();
+            const filtrados = todosProdutos.filter(p => p.nome.toLowerCase().includes(termo));
+            renderizarTabela(filtrados);
+        });
+
+        // SALVAR (COM TOAST NOTIFICATION)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = inputId.value;
@@ -76,32 +111,55 @@
             const url = id ? `/produtos/${id}` : '/produtos';
             const method = id ? 'PUT' : 'POST';
 
-            await fetch(url, {
-                method: method,
+            const res = await fetch(url, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
 
-            form.reset();
-            inputId.value = '';
-            btnSalvar.textContent = 'Adicionar';
-            carregarProdutos();
-        });
-
-        // Deletar
-        async function deletarProduto(id) {
-            if (confirm("Excluir produto?")) {
-                await fetch(`/produtos/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: id ? 'Atualizado!' : 'Cadastrado!',
+                    text: `Produto ${dados.nome} salvo com sucesso.`,
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                form.reset();
+                inputId.value = '';
+                btnSalvar.textContent = 'Salvar';
                 carregarProdutos();
             }
+        });
+
+        // CONFIRMAR EXCLUSÃO (COM MODAL BONITO)
+        function confirmarExclusao(id) {
+            Swal.fire({
+                title: 'Tem certeza?',
+                text: "Você não poderá reverter isso!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sim, deletar!',
+                cancelButtonText: 'Cancelar'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const res = await fetch(`/produtos/${id}`, { method: 'DELETE' });
+                    if (res.ok) {
+                        Swal.fire('Deletado!', 'O produto foi removido.', 'success');
+                        carregarProdutos();
+                    }
+                }
+            });
         }
 
-        // Preparar edição
         function prepararEdicao(id, nome, preco) {
             inputId.value = id;
             inputNome.value = nome;
             inputPreco.value = preco;
-            btnSalvar.textContent = 'Atualizar';
+            btnSalvar.textContent = 'Atualizar Produto';
+            window.scrollTo(0, 0); // Sobe a página para o formulário
         }
 
         carregarProdutos();
