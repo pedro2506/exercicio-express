@@ -8,9 +8,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 app.use(cors());
-app.use(express.static("public"));
-app.get("*", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+
 });
 
 // 🔌 Conexão com MySQL (Railway + fallback local)
@@ -146,6 +144,11 @@ app.delete("/produtos/:id", autenticar, (req, res) => {
       res.json({ mensagem: "Produto removido com sucesso" });
     }
   );
+});
+
+app.use(express.static("public"));
+app.get("*", (req, res) => {
+  res.sendFile(__dirname + "/public/index.html");
 });
 
 // 🚀 Servidor
