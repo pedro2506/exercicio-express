@@ -10,7 +10,7 @@ app.use(express.static("public"));
 // 🔌 Conexão com MySQL
 // Ajustado para 127.0.0.1 para evitar erros de IPv6 no Codespaces
 const db = mysql.createConnection({
-  host: "127.0.0.1", 
+  host: "localhost", 
   user: "root",
   password: "1234",
   database: "loja"
