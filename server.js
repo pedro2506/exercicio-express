@@ -2,6 +2,7 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors'); // Importante para o Codespaces
 const app = express();
+const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 app.use(cors()); // Libera o acesso para o navegador
@@ -10,11 +11,11 @@ app.use(express.static("public"));
 // 🔌 Conexão com MySQL
 // Ajustado para 127.0.0.1 para evitar erros de IPv6 no Codespaces
 const db = mysql.createConnection({
-  host: "localhost", 
+  host: "maglev.proxy.rlwy.net", 
   user: "root",
-  password: "1234",
-  database: "loja",
-  socketPath: "/tmp/mysql.sock"
+  password: "AgVaJAMljqcCjnIKZVmVirvPKBVoBmEp",
+  database: "railway",
+  port: 43906
 });
 
 db.connect((err) => {
@@ -27,10 +28,12 @@ db.connect((err) => {
 
 // 🛑 Middleware de validação
 function validarProduto(req, res, next) {
-  const { nome, preco, categoria } = req.body;
-  if (!nome || preco === undefined || typeof preco !== "number" || !categoria) {
+  let { nome, preco, categoria } = req.body;
+  preco = Number(preco); // 👈 converte aqui
+  if (!nome || isNaN(preco) || !categoria) {
     return res.status(400).json({ erro: "Dados inválidos ou categoria ausente" });
   }
+  req.body.preco = preco; // 👈 garante número
   next();
 }
 
@@ -74,6 +77,6 @@ app.delete("/produtos/:id", (req, res) => {
 });
 
 // 🚀 Servidor
-app.listen(3001, () => {
-  console.log("Servidor rodando na porta 3001");
+app.listen(PORT, () => {
+  console.log("Servidor rodando na porta", PORT);
 });
