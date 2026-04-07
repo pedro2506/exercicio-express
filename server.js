@@ -27,9 +27,9 @@ db.connect((err) => {
 
 // 🛑 Middleware de validação
 function validarProduto(req, res, next) {
-  const { nome, preco } = req.body;
-  if (!nome || preco === undefined || typeof preco !== "number") {
-    return res.status(400).json({ erro: "Dados inválidos" });
+  const { nome, preco, categoria } = req.body;
+  if (!nome || preco === undefined || typeof preco !== "number" || !categoria) {
+    return res.status(400).json({ erro: "Dados inválidos ou categoria ausente" });
   }
   next();
 }
@@ -44,21 +44,22 @@ app.get("/produtos", (req, res) => {
 
 // ➕ POST - criar produto
 app.post("/produtos", validarProduto, (req, res) => {
-  const { nome, preco } = req.body;
-  db.query("INSERT INTO produtos (nome, preco) VALUES (?, ?)", [nome, preco], (err, result) => {
+  const { nome, preco, categoria } = req.body;
+  db.query("INSERT INTO produtos (nome, preco, categoria) VALUES (?, ?, ?)", 
+    [nome, preco, categoria], (err, result) => {
     if (err) return res.status(500).json(err);
-    res.status(201).json({ id: result.insertId, nome, preco });
+    res.status(201).json({ id: result.insertId, nome, preco, categoria });
   });
 });
 
 // ✏️ PUT - atualizar produto
 app.put("/produtos/:id", validarProduto, (req, res) => {
   const { id } = req.params;
-  const { nome, preco } = req.body;
-  db.query("UPDATE produtos SET nome = ?, preco = ? WHERE id = ?", [nome, preco, id], (err, result) => {
+  const { nome, preco, categoria } = req.body;
+  db.query("UPDATE produtos SET nome = ?, preco = ?, categoria = ? WHERE id = ?", 
+    [nome, preco, categoria, id], (err, result) => {
     if (err) return res.status(500).json(err);
-    if (result.affectedRows === 0) return res.status(404).json({ erro: "Não encontrado" });
-    res.json({ id, nome, preco });
+    res.json({ id, nome, preco, categoria });
   });
 });
 

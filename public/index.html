@@ -3,48 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gerenciador de Loja Pro</title>
+    <title>Gerenciador Pro + Categorias</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { border: none; border-radius: 12px; }
-        .shadow-sm { box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important; }
+        body { background-color: #f0f2f5; }
+        .badge-categoria { font-size: 0.8rem; padding: 5px 10px; border-radius: 20px; }
     </style>
 </head>
 <body>
     <div class="container mt-5">
-        <div class="card shadow-sm p-4 mb-4">
-            <h2 class="text-center mb-4 text-primary">🛒 Cadastro de Produtos</h2>
+        <div class="card shadow-sm p-4 mb-4 border-0">
+            <h2 class="text-center mb-4 text-primary">📦 Estoque Inteligente</h2>
             <form id="form-produto" class="row g-3">
                 <input type="hidden" id="produto-id">
-                <div class="col-md-6">
-                    <label class="form-label fw-bold">Nome do Produto</label>
-                    <input type="text" id="nome" class="form-control" placeholder="Ex: Teclado Mecânico" required>
+                <div class="col-md-5">
+                    <label class="form-label fw-bold">Nome</label>
+                    <input type="text" id="nome" class="form-control" required>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Categoria</label>
+                    <select id="categoria" class="form-select" required>
+                        <option value="Eletrônicos">Eletrônicos</option>
+                        <option value="Alimentos">Alimentos</option>
+                        <option value="Vestuário">Vestuário</option>
+                        <option value="Outros">Outros</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label fw-bold">Preço</label>
-                    <div class="input-group">
-                        <span class="input-group-text">R$</span>
-                        <input type="number" id="preco" step="0.01" class="form-control" placeholder="0,00" required>
-                    </div>
+                    <input type="number" id="preco" step="0.01" class="form-control" required>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary w-100 fw-bold" id="btn-salvar">Salvar</button>
+                    <button type="submit" class="btn btn-primary w-100" id="btn-salvar">Salvar</button>
                 </div>
             </form>
         </div>
 
-        <div class="card shadow-sm p-4">
-            <div class="mb-3">
-                <input type="text" id="input-busca" class="form-control" placeholder="🔍 Pesquisar produtos pelo nome...">
+        <div class="card shadow-sm p-4 border-0">
+            <div class="d-flex justify-content-between mb-3">
+                <input type="text" id="input-busca" class="form-control w-75" placeholder="🔍 Buscar por nome ou categoria...">
             </div>
-
             <table class="table table-hover align-middle">
-                <thead class="table-light">
+                <thead class="table-dark">
                     <tr>
                         <th>ID</th>
-                        <th>Nome</th>
+                        <th>Produto</th>
+                        <th>Categoria</th>
                         <th>Preço</th>
                         <th class="text-center">Ações</th>
                     </tr>
@@ -57,109 +62,75 @@
     <script>
         const form = document.getElementById('form-produto');
         const tabela = document.getElementById('tabela-produtos');
-        const inputId = document.getElementById('produto-id');
-        const inputNome = document.getElementById('nome');
-        const inputPreco = document.getElementById('preco');
-        const btnSalvar = document.getElementById('btn-salvar');
         const inputBusca = document.getElementById('input-busca');
+        let todosProdutos = [];
 
-        let todosProdutos = []; // Guardaremos os produtos aqui para filtrar sem ir ao banco toda hora
-
-        // FORMATAÇÃO DE MOEDA (BRL)
-        const formatarMoeda = (valor) => {
-            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor);
-        };
-
-        // CARREGAR PRODUTOS
         async function carregarProdutos() {
             const res = await fetch('/produtos');
             todosProdutos = await res.json();
-            renderizarTabela(todosProdutos);
+            renderizar(todosProdutos);
         }
 
-        // RENDERIZAR TABELA COM FILTRO
-        function renderizarTabela(lista) {
+        function renderizar(lista) {
             tabela.innerHTML = '';
             lista.forEach(p => {
                 tabela.innerHTML += `
                     <tr>
-                        <td><span class="badge bg-secondary">#${p.id}</span></td>
+                        <td>#${p.id}</td>
                         <td class="fw-bold">${p.nome}</td>
-                        <td class="text-success fw-bold">${formatarMoeda(p.preco)}</td>
+                        <td><span class="badge bg-info text-dark badge-categoria">${p.categoria}</span></td>
+                        <td class="text-success fw-bold">R$ ${Number(p.preco).toFixed(2)}</td>
                         <td class="text-center">
-                            <button class="btn btn-outline-warning btn-sm me-2" onclick="prepararEdicao(${p.id}, '${p.nome}', ${p.preco})">✏️ Editar</button>
-                            <button class="btn btn-outline-danger btn-sm" onclick="confirmarExclusao(${p.id})">🗑️ Excluir</button>
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="prepararEdicao(${p.id}, '${p.nome}', ${p.preco}, '${p.categoria}')">✏️</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="excluir(${p.id})">🗑️</button>
                         </td>
-                    </tr>
-                `;
+                    </tr>`;
             });
         }
 
-        // BUSCA EM TEMPO REAL
+        // Busca Inteligente (Nome ou Categoria)
         inputBusca.addEventListener('input', (e) => {
-            const termo = e.target.value.toLowerCase();
-            const filtrados = todosProdutos.filter(p => p.nome.toLowerCase().includes(termo));
-            renderizarTabela(filtrados);
+            const t = e.target.value.toLowerCase();
+            const f = todosProdutos.filter(p => p.nome.toLowerCase().includes(t) || p.categoria.toLowerCase().includes(t));
+            renderizar(f);
         });
 
-        // SALVAR (COM TOAST NOTIFICATION)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = inputId.value;
-            const dados = { nome: inputNome.value, preco: Number(inputPreco.value) };
+            const id = document.getElementById('produto-id').value;
+            const dados = {
+                nome: document.getElementById('nome').value,
+                preco: Number(document.getElementById('preco').value),
+                categoria: document.getElementById('categoria').value
+            };
 
-            const url = id ? `/produtos/${id}` : '/produtos';
-            const method = id ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method,
+            await fetch(id ? `/produtos/${id}` : '/produtos', {
+                method: id ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dados)
             });
 
-            if (res.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: id ? 'Atualizado!' : 'Cadastrado!',
-                    text: `Produto ${dados.nome} salvo com sucesso.`,
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-                form.reset();
-                inputId.value = '';
-                btnSalvar.textContent = 'Salvar';
-                carregarProdutos();
-            }
+            form.reset();
+            document.getElementById('produto-id').value = '';
+            carregarProdutos();
+            Swal.fire('Sucesso!', 'Produto atualizado.', 'success');
         });
 
-        // CONFIRMAR EXCLUSÃO (COM MODAL BONITO)
-        function confirmarExclusao(id) {
-            Swal.fire({
-                title: 'Tem certeza?',
-                text: "Você não poderá reverter isso!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sim, deletar!',
-                cancelButtonText: 'Cancelar'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    const res = await fetch(`/produtos/${id}`, { method: 'DELETE' });
-                    if (res.ok) {
-                        Swal.fire('Deletado!', 'O produto foi removido.', 'success');
-                        carregarProdutos();
-                    }
-                }
-            });
+        function prepararEdicao(id, nome, preco, categoria) {
+            document.getElementById('produto-id').value = id;
+            document.getElementById('nome').value = nome;
+            document.getElementById('preco').value = preco;
+            document.getElementById('categoria').value = categoria;
+            document.getElementById('btn-salvar').textContent = 'Atualizar';
+            window.scrollTo(0, 0);
         }
 
-        function prepararEdicao(id, nome, preco) {
-            inputId.value = id;
-            inputNome.value = nome;
-            inputPreco.value = preco;
-            btnSalvar.textContent = 'Atualizar Produto';
-            window.scrollTo(0, 0); // Sobe a página para o formulário
+        async function excluir(id) {
+            const r = await Swal.fire({ title: 'Excluir?', showCancelButton: true });
+            if (r.isConfirmed) {
+                await fetch(`/produtos/${id}`, { method: 'DELETE' });
+                carregarProdutos();
+            }
         }
 
         carregarProdutos();
