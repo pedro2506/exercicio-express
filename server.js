@@ -11,12 +11,13 @@ app.use(express.static("public"));
 // 🔌 Conexão com MySQL
 // Ajustado para 127.0.0.1 para evitar erros de IPv6 no Codespaces
 const db = mysql.createConnection({
-  host: "maglev.proxy.rlwy.net", 
-  user: "root",
-  password: "AgVaJAMljqcCjnIKZVmVirvPKBVoBmEp",
-  database: "railway",
-  port: 43906
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  port: process.env.DB_PORT
 });
+
 
 db.connect((err) => {
   if (err) {
