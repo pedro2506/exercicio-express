@@ -29,11 +29,11 @@ db.connect((err) => {
 // 🛑 Middleware de validação
 function validarProduto(req, res, next) {
   let { nome, preco, categoria } = req.body;
-  preco = Number(preco); // 👈 converte aqui
+  preco = Number(preco); 
   if (!nome || isNaN(preco) || !categoria) {
     return res.status(400).json({ erro: "Dados inválidos ou categoria ausente" });
   }
-  req.body.preco = preco; // 👈 garante número
+  req.body.preco = preco; 
   next();
 }
 
@@ -52,6 +52,7 @@ app.post("/produtos", validarProduto, (req, res) => {
     [nome, preco, categoria], (err, result) => {
     if (err) return res.status(500).json(err);
     res.status(201).json({ id: result.insertId, nome, preco, categoria });
+    console.log(req.body);
   });
 });
 
