@@ -118,6 +118,31 @@ function App() {
     }
   };
 
+  const deletarProduto = async (id) => {
+  const confirmar = window.confirm("Tem certeza que deseja excluir?");
+
+  if (!confirmar) return;
+
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(
+    `https://exercicio-express.onrender.com/produtos/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    }
+  );
+
+  if (res.status === 200) {
+    alert("Produto deletado!");
+    carregarProdutos();
+  } else {
+    alert("Erro ao deletar");
+  }
+};
+
   // 🔄 carregar automaticamente quando logado
   useEffect(() => {
     const buscar = async () => {
@@ -210,6 +235,10 @@ function App() {
                 <button onClick={() => editarProduto(p)}>
                   Editar
                 </button>
+
+                <button onClick={() => deletarProduto(p.id)}>
+                  Excluir
+                  </button>
               </li>
             ))}
           </ul>
