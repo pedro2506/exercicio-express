@@ -2,13 +2,14 @@ const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
 app.use(cors());
-
+app.use(express.static(path.join(__dirname, "public")));
 
 
 // 🔌 Conexão com MySQL (Railway + fallback local)
@@ -148,8 +149,8 @@ app.delete("/produtos/:id", autenticar, (req, res) => {
 
 app.use(express.static("public"));
 
-app.get("/*", (req, res) => {
-  res.sendFile(__dirname + "/public/index.html");
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // 🚀 Servidor
