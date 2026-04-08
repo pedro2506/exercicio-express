@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function App() {
-  // 🔐 estados do login
+  // 🔐 login
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(localStorage.getItem("token") || "");
 
-  // 📦 👉 COLOCA AQUI (produtos)
+  // 📦 produtos
   const [produtos, setProdutos] = useState([]);
 
-  // 🔐 login
+  // 📝 novo produto
+  const [nome, setNome] = useState("");
+  const [preco, setPreco] = useState("");
+  const [categoria, setCategoria] = useState("");
+
+  // 🔐 LOGIN
   const login = async () => {
     const res = await fetch("https://exercicio-express.onrender.com/login", {
       method: "POST",
@@ -24,41 +29,141 @@ function App() {
     if (data.token) {
       localStorage.setItem("token", data.token);
       setToken(data.token);
-      alert("Login feito!");
+      alert("Login realizado!");
     } else {
       alert("Erro no login");
     }
   };
 
-  // 📦 👉 COLOCA AQUI (função)
+  // 🚪 LOGOUT
+  const logout = () => {
+    localStorage.removeItem("token");
+    setToken("");
+    setProdutos([]);
+  };
+
+  // 📦 LISTAR PRODUTOS
   const carregarProdutos = async () => {
     const res = await fetch("https://exercicio-express.onrender.com/produtos");
     const data = await res.json();
     setProdutos(data);
   };
 
+  // ➕ CRIAR PRODUTO (PROTEGIDO)
+  const salvarProduto = async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch("https://exercicio-express.onrender.com/produtos", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        nome,
+        preco: Number(preco),
+        categoria
+      })
+    });
+
+    if (res.status === 201) {
+      alert("Produto cadastrado!");
+      setNome("");
+      setPreco("");
+      setCategoria("");
+      carregarProdutos();
+    } else {
+      alert("Erro ao cadastrar");
+    }
+  };
+
+  // 🔄 carrega produtos automaticamente quando loga
+  useEffect(() => {
+    const buscar = async () => {
+    if (token) return;
+
+   const res = await fetch("https://exercicio-express.onrender.com/produtos");
+    const data = await res.json();
+    setProdutos(data);
+  };
+
+  buscar();
+}, [token]);
+
   return (
-    <div>
-      <h1>Login</h1>
+    <div style={{ padding: 20 }}>
+      <h1>📦 Sistema de Estoque</h1>
 
-      <input placeholder="Email" onChange={(e) => setEmail(e.target.value)} />
-      <input placeholder="Senha" type="password" onChange={(e) => setSenha(e.target.value)} />
+      {/* 🔐 LOGIN */}
+      {!token && (
+        <>
+          <h2>Login</h2>
 
-      <button onClick={login}>Entrar</button>
+          <input
+            placeholder="Email"
+            onChange={(e) => setEmail(e.target.value)}
+          />
 
-      {token && <p>Logado ✅</p>}
+          <input
+            placeholder="Senha"
+            type="password"
+            onChange={(e) => setSenha(e.target.value)}
+          />
 
-      {/* 📦 BOTÃO */}
-      <button onClick={carregarProdutos}>Carregar Produtos</button>
+          <br /><br />
 
-      {/* 📦 LISTA */}
-      <ul>
-        {produtos.map((p) => (
-          <li key={p.id}>
-            {p.nome} - R$ {p.preco}
-          </li>
-        ))}
-      </ul>
+          <button onClick={login}>Entrar</button>
+        </>
+      )}
+
+      {/* 🔓 SISTEMA */}
+      {token && (
+        <>
+          <p>Logado ✅</p>
+          <button onClick={logout}>Sair</button>
+
+          <hr />
+
+          {/* ➕ CADASTRO */}
+          <h2>Novo Produto</h2>
+
+          <input
+            placeholder="Nome"
+            value={nome}
+            onChange={(e) => setNome(e.target.value)}
+          />
+
+          <input
+            placeholder="Preço"
+            type="number"
+            value={preco}
+            onChange={(e) => setPreco(e.target.value)}
+          />
+
+          <input
+            placeholder="Categoria"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+          />
+
+          <button onClick={salvarProduto}>Salvar</button>
+
+          <hr />
+
+          {/* 📦 LISTA */}
+          <h2>Produtos</h2>
+
+          <button onClick={carregarProdutos}>Atualizar</button>
+
+          <ul>
+            {produtos.map((p) => (
+              <li key={p.id}>
+                {p.nome} - R$ {p.preco} ({p.categoria})
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
