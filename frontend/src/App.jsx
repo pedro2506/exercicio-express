@@ -8,8 +8,9 @@ function App() {
 
   // 📦 produtos
   const [produtos, setProdutos] = useState([]);
+  const [editandoId, setEditandoId] = useState(null);
 
-  // 📝 novo produto
+  // 📝 formulário
   const [nome, setNome] = useState("");
   const [preco, setPreco] = useState("");
   const [categoria, setCategoria] = useState("");
@@ -49,7 +50,7 @@ function App() {
     setProdutos(data);
   };
 
-  // ➕ CRIAR PRODUTO (PROTEGIDO)
+  // ➕ CRIAR PRODUTO
   const salvarProduto = async () => {
     const token = localStorage.getItem("token");
 
@@ -77,18 +78,58 @@ function App() {
     }
   };
 
-  // 🔄 carrega produtos automaticamente quando loga
-  useEffect(() => {
-    const buscar = async () => {
-    if (token) return;
-
-   const res = await fetch("https://exercicio-express.onrender.com/produtos");
-    const data = await res.json();
-    setProdutos(data);
+  // ✏️ EDITAR PRODUTO
+  const editarProduto = (produto) => {
+    setNome(produto.nome);
+    setPreco(produto.preco);
+    setCategoria(produto.categoria);
+    setEditandoId(produto.id);
   };
 
-  buscar();
-}, [token]);
+  // 🔄 ATUALIZAR PRODUTO (PUT)
+  const atualizarProduto = async () => {
+    const token = localStorage.getItem("token");
+
+    const res = await fetch(
+      `https://exercicio-express.onrender.com/produtos/${editandoId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({
+          nome,
+          preco: Number(preco),
+          categoria
+        })
+      }
+    );
+
+    if (res.status === 200) {
+      alert("Produto atualizado!");
+      setEditandoId(null);
+      setNome("");
+      setPreco("");
+      setCategoria("");
+      carregarProdutos();
+    } else {
+      alert("Erro ao atualizar");
+    }
+  };
+
+  // 🔄 carregar automaticamente quando logado
+  useEffect(() => {
+    const buscar = async () => {
+      if (!token) return;
+
+      const res = await fetch("https://exercicio-express.onrender.com/produtos");
+      const data = await res.json();
+      setProdutos(data);
+    };
+
+    buscar();
+  }, [token]);
 
   return (
     <div style={{ padding: 20 }}>
@@ -124,8 +165,8 @@ function App() {
 
           <hr />
 
-          {/* ➕ CADASTRO */}
-          <h2>Novo Produto</h2>
+          {/* FORMULÁRIO */}
+          <h2>{editandoId ? "Editar Produto" : "Novo Produto"}</h2>
 
           <input
             placeholder="Nome"
@@ -146,19 +187,29 @@ function App() {
             onChange={(e) => setCategoria(e.target.value)}
           />
 
-          <button onClick={salvarProduto}>Salvar</button>
+          <br /><br />
+
+          {editandoId ? (
+            <button onClick={atualizarProduto}>Atualizar</button>
+          ) : (
+            <button onClick={salvarProduto}>Salvar</button>
+          )}
 
           <hr />
 
-          {/* 📦 LISTA */}
+          {/* LISTA */}
           <h2>Produtos</h2>
 
-          <button onClick={carregarProdutos}>Atualizar</button>
+          <button onClick={carregarProdutos}>Atualizar lista</button>
 
           <ul>
             {produtos.map((p) => (
               <li key={p.id}>
                 {p.nome} - R$ {p.preco} ({p.categoria})
+
+                <button onClick={() => editarProduto(p)}>
+                  Editar
+                </button>
               </li>
             ))}
           </ul>
