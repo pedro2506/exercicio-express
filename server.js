@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.static(path.join(__dirname, "public")));
 
 
-// 🔌 Conexão com MySQL (Railway + fallback local)
+// 🔌 Conexão com MySQL 
 const db = mysql.createConnection({
   host: process.env.DB_HOST || "maglev.proxy.rlwy.net",
   user: process.env.DB_USER || "root",
@@ -29,7 +29,7 @@ db.connect((err) => {
   }
 });
 
-// 🔐 SEGREDO JWT
+// 🔐 JWT
 const SECRET = "segredo";
 
 // 🛑 Middleware de validação
@@ -64,7 +64,7 @@ function autenticar(req, res, next) {
   }
 }
 
-// 🔐 LOGIN (simples)
+// 🔐 LOGIN
 app.post("/login", (req, res) => {
   const { email, senha } = req.body;
 
@@ -85,7 +85,7 @@ app.get("/produtos", (req, res) => {
   });
 });
 
-// ➕ POST - criar produto (protegido)
+// ➕ POST - criar produto
 app.post("/produtos", autenticar, validarProduto, (req, res) => {
   const { nome, preco, categoria } = req.body;
 
@@ -108,7 +108,7 @@ app.post("/produtos", autenticar, validarProduto, (req, res) => {
   );
 });
 
-// ✏️ PUT - atualizar produto (protegido)
+// ✏️ PUT - atualizar produto 
 app.put("/produtos/:id", autenticar, validarProduto, (req, res) => {
   const { id } = req.params;
   const { nome, preco, categoria } = req.body;
@@ -128,7 +128,7 @@ app.put("/produtos/:id", autenticar, validarProduto, (req, res) => {
   );
 });
 
-// ❌ DELETE - remover produto (protegido)
+// ❌ DELETE - remover produto 
 app.delete("/produtos/:id", autenticar, (req, res) => {
   const { id } = req.params;
 
